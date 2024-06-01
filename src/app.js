@@ -6,5 +6,9 @@
 
 // The Lambda handler
 exports.handler = async (event) => {
-  console.log(JSON.stringify(event, 2, null))
+  event.Records.forEach(function(record){
+    let body = JSON.parse(record.body);
+    console.log(`subject: ${body.Subject}, message: ${body.Message}`);
+  });
+  // console.log(JSON.stringify(event, 2, null))
 }
