@@ -25,9 +25,10 @@ class SnsProducer
     mutex = Mutex.new
     count = 0
     
-    job_id = "#{Time.now.utc.iso8601}|#{@num_messages}|#{@batch_size}"
     @num_messages.times do |i|
-      messages << { job_id: job_id, task_id: i + 1 }.to_json
+      job_id = "#{(Time.now.utc.iso8601(6))}|#{@num_messages}|#{@batch_size}"
+      msg = { job_id: job_id, task_id: i + 1 }.to_json
+      messages << msg
     end
 
     t0 = Time.now

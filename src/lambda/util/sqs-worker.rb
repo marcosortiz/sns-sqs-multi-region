@@ -1,5 +1,3 @@
-# require_relative 'http-worker'
-
 class SqsWorker
 
     def batch_process_records(records, max_retries=2, thread_count=5)
