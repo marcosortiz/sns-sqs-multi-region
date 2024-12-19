@@ -1,5 +1,5 @@
 require 'json'
-require_relative 'workers/sqs-worker'
+require_relative 'util/sqs-worker'
 require_relative 'util/emf'
 
 

@@ -16,11 +16,13 @@ echo "Saving the outputs into  config/config.json..."
 jq -n \
     --arg primary "$PRIMARY_ENV" \
     --arg secondary "$SECONDARY_ENV" \
+    --arg primary_region "$PRIMARY_REGION" \
+    --arg secondary_region "$SECONDARY_REGION" \
     --slurpfile primary_data config/$PRIMARY_ENV.json \
     --slurpfile secondary_data config/$SECONDARY_ENV.json \
     '{
-        primary: ($primary_data[0] | map({(.OutputKey): .OutputValue}) | add),
-        secondary: ($secondary_data[0] | map({(.OutputKey): .OutputValue}) | add)
+        primary: (($primary_data[0] | map({(.OutputKey): .OutputValue}) | add) + {region: $primary_region}),
+        secondary: (($secondary_data[0] | map({(.OutputKey): .OutputValue}) | add) + {region: $secondary_region})
     }' > config/config.json
 
 # Clean up temporary files

@@ -65,7 +65,7 @@ class SqsWorker
             body = JSON.parse(record['body'])
             message = JSON.parse(body['Message'])
             task_id = message['task_id']
-            puts("#{task_id} #{resp.code}")
+            puts("#{task_id}")
             return true
         rescue StandardError => e
             puts("Error: #{e.message}")
