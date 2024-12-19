@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Cross-region SNS to SQSSubscription
+
+Parameters:
+  SnsTopicArn:
+    Type: String
+    Description: ARN of the SNS Topic
+  QueueArn:
+    Type: String
+    Description: ARN of the SQS Queue
+
+Resources:
+  QueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      TopicArn: !Ref SnsTopicArn
+      Endpoint: !Ref QueueArn

@@ -28,3 +28,18 @@ jq -n \
 # Clean up temporary files
 rm -rf config/$PRIMARY_ENV.json
 rm -rf config/$SECONDARY_ENV.json
+
+PRIMARY_TOPIC_ARN=$(jq -r '.primary.SnsTopicArn' config/config.json)
+PRIMARY_DR_QUEUE_ARN=$(jq -r '.primary.DisasterRecoveryQueueArn' config/config.json)
+SECONDARY_TOPIC_ARN=$(jq -r '.secondary.SnsTopicArn' config/config.json)
+SECONDARY_DR_QUEUE_ARN=$(jq -r '.secondary.DisasterRecoveryQueueArn' config/config.json)
+
+echo "Deploying the cross region SNS to SQS DR subscriptions ..."
+sam deploy --stack-name "$STACK_NAME-dr-subscriptions"  --template-file subscriptions.yaml --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 \
+          --parameter-overrides \
+          SnsTopicArn=$PRIMARY_TOPIC_ARN \
+          QueueArn=$SECONDARY_DR_QUEUE_ARN
+sam deploy --stack-name "$STACK_NAME-dr-subscriptions"  --template-file subscriptions.yaml --region $SECONDARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 \
+          --parameter-overrides \
+          SnsTopicArn=$SECONDARY_TOPIC_ARN \
+          QueueArn=$PRIMARY_DR_QUEUE_ARN

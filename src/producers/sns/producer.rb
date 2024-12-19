@@ -16,7 +16,7 @@ class SnsProducer
     config = JSON.parse(config_file)
     env = is_pramary_env ? PRIMARY_ENV_KEY : SECONDARY_ENV_KEY
     @region = config[env]['region']
-    @topic_arn = config[env]['SnsTopic']
+    @topic_arn = config[env]['SnsTopicArn']
   end
 
   def send_messages

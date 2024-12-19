@@ -91,16 +91,59 @@ Resources:
             MaximumBatchingWindowInSeconds: 5
             FunctionResponseTypes:
               - ReportBatchItemFailures
+  DrLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SQSAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:ReceiveMessage'
+                  - 'sqs:DeleteMessage'
+                  - 'sqs:GetQueueAttributes'
+                Resource: !GetAtt DisasterRecoveryQueue.Arn
+  DrSqsConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: consumer.handler
+      Runtime: ruby3.3
+      CodeUri: src/lambda/
+      Timeout: 30
+      MemorySize: 512
+      Role: !GetAtt DrLambdaExecutionRole.Arn
+      ReservedConcurrentExecutions: 1
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt DisasterRecoveryQueue.Arn
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 5
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+              
 Outputs:
-  SnsTopic:
+  SnsTopicArn:
     Value: !Ref SnsTopic
-    Description: SNS Topic ARN
+    Description: SNS Topic Arn
 
-  ActiveQueue:
+  ActiveQueueUrl:
     Value: !GetAtt ActiveQueue.QueueUrl
-    Description: Active Queue URL
+    Description: Active Queue Url
 
-  DisasterRecoveryQueue:
-    Value: !GetAtt DisasterRecoveryQueue.QueueUrl
-    Description: DR QUEUE URL
+  DisasterRecoveryQueueArn:
+    Value: !GetAtt DisasterRecoveryQueue.Arn
+    Description: DR QUEUE Arn
 
