@@ -3,6 +3,7 @@ class SqsWorker
     def batch_process_records(records, max_retries=2, thread_count=5)
         t0 = Time.now
         failed_records = []
+        latencies = []
         failed_count = 0
         mutex = Mutex.new
       
@@ -11,8 +12,17 @@ class SqsWorker
           recs.each_slice((recs.size.to_f / thread_count).ceil) do |slice|
             threads << Thread.new do
               slice.each do |record|
-                success = process_record(record)
-                unless success
+                body = JSON.parse(record['body'])
+                message = JSON.parse(body['Message'])
+                task_id = message['task_id']
+                recorded_at = message['recorded_at']
+                latency = (Time.now - Time.parse(recorded_at)).round(6) rescue nil
+                success = process_record(task_id)
+                if success
+                  mutex.synchronize do
+                    latencies << latency
+                  end
+                else success
                   mutex.synchronize do
                     failed_records << record
                     failed_count += 1
@@ -49,7 +59,8 @@ class SqsWorker
             failed_count: failed_count,
             retries: [max_retries, failed_records.empty? ? max_retries : max_retries - 1].min,
             duration: elapsed_time,
-            process_rate: (records.length - failed_count) / elapsed_time
+            process_rate: (records.length - failed_count) / elapsed_time,
+            latency: latencies.max
           },
           failed_records: failed_records
         }
@@ -58,11 +69,8 @@ class SqsWorker
 
     private
 
-    def process_record(record, retrying=false)
+    def process_record(task_id, retrying=false)
         begin
-            body = JSON.parse(record['body'])
-            message = JSON.parse(body['Message'])
-            task_id = message['task_id']
             puts("#{task_id}")
             return true
         rescue StandardError => e

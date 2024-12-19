@@ -9,7 +9,8 @@ class EmfLogger
         failed_count: {name: 'FailedCount', unit: 'Count'},
         retries: {name: 'Retries', unit: 'Count'},
         duration: {name: 'Duration', unit: 'Seconds'},
-        process_rate: {name: 'ProcessingRate', unit: 'Count/Second'}
+        process_rate: {name: 'ProcessingRate', unit: 'Count/Second'},
+        latency: {name: 'Latency', unit: 'Seconds'}
     }
 
 

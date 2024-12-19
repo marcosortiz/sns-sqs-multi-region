@@ -26,8 +26,9 @@ class SnsProducer
     count = 0
     
     @num_messages.times do |i|
-      job_id = "#{(Time.now.utc.iso8601(6))}|#{@num_messages}|#{@batch_size}"
-      msg = { job_id: job_id, task_id: i + 1 }.to_json
+      recorded_at = Time.now.utc.iso8601(6)
+      job_id = "#{recorded_at}|#{@num_messages}|#{@batch_size}"
+      msg = { recorded_at: recorded_at, job_id: job_id, task_id: i + 1 }.to_json
       messages << msg
     end
 
@@ -68,7 +69,7 @@ class SnsProducer
 end
 
 IS_PRIMARY_ENV = true
-NUM_MESSAGES = 5000
+NUM_MESSAGES = 50000
 BATCH_SIZE = 500
 
 producer = SnsProducer.new(NUM_MESSAGES, BATCH_SIZE, IS_PRIMARY_ENV)
