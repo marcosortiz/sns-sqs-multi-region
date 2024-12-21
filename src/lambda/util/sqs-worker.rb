@@ -1,8 +1,12 @@
+require 'time'
+
 class SqsWorker
 
     def batch_process_records(records, max_retries=2, thread_count=5)
         t0 = Time.now
         failed_records = []
+        sns_to_sqs_latencies = []
+        sqs_to_lambda_lacencies = []
         latencies = []
         failed_count = 0
         mutex = Mutex.new
@@ -11,18 +15,29 @@ class SqsWorker
           threads = []
           recs.each_slice((recs.size.to_f / thread_count).ceil) do |slice|
             threads << Thread.new do
+              now = Time.now.to_f*1000
               slice.each do |record|
                 body = JSON.parse(record['body'])
                 message = JSON.parse(body['Message'])
                 task_id = message['task_id']
-                recorded_at = message['recorded_at']
-                latency = (Time.now - Time.parse(recorded_at)).round(6) rescue nil
+
+                # Putting all timestamps in milliseconds
+                sns_timestamp = Time.parse(body['Timestamp']).to_f*1000
+                recorded_at = Time.parse(message['recorded_at']).to_f*1000
+                sent_timestamp = record['attributes']['SentTimestamp'].to_i
+                aprox_timestamp_rcv = record['attributes']['ApproximateFirstReceiveTimestamp'].to_i
+                sns_to_sqs_latency = aprox_timestamp_rcv - sent_timestamp
+                sqs_to_lambda_lacency = now - aprox_timestamp_rcv
+                latency = now - recorded_at
+                
+                mutex.synchronize do
+                  sns_to_sqs_latencies << sns_to_sqs_latency
+                  sqs_to_lambda_lacencies << sqs_to_lambda_lacency
+                  latencies << latency
+                end
+                
                 success = process_record(task_id)
-                if success
-                  mutex.synchronize do
-                    latencies << latency
-                  end
-                else success
+                unless success
                   mutex.synchronize do
                     failed_records << record
                     failed_count += 1
@@ -60,6 +75,8 @@ class SqsWorker
             retries: [max_retries, failed_records.empty? ? max_retries : max_retries - 1].min,
             duration: elapsed_time,
             process_rate: (records.length - failed_count) / elapsed_time,
+            sns_to_sqs_latency: sns_to_sqs_latencies.max,
+            sqs_to_lambda_lacency: sqs_to_lambda_lacencies.max,
             latency: latencies.max
           },
           failed_records: failed_records
