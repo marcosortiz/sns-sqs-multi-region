@@ -133,6 +133,86 @@ Resources:
             MaximumBatchingWindowInSeconds: 0
             FunctionResponseTypes:
               - ReportBatchItemFailures
+  SnsSqSMultiRegion:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardBody: |
+        {
+          "widgets": [
+              {
+                  "height": 10,
+                  "width": 24,
+                  "y": 7,
+                  "x": 0,
+                  "type": "metric",
+                  "properties": {
+                      "metrics": [
+                          [ { "expression": "m3 - m2", "label": "SqsLatency", "id": "e1", "region": "us-east-1" } ],
+                          [ { "expression": "m1 - (m2 + m3)", "label": "LambdaLatency", "id": "e2", "region": "us-east-1" } ],
+                          [ "SnsSqsMultiRegion", "SnsToSqSLatency", "ServiceName", "SqsConsumer", { "region": "us-east-1", "id": "m2", "label": "SnsLatency" } ],
+                          [ ".", "Latency", ".", ".", { "region": "us-east-1", "id": "m1", "visible": false } ],
+                          [ ".", "SqsToLambdaLatency", ".", ".", { "region": "us-east-1", "id": "m3", "visible": false } ]
+                      ],
+                      "view": "timeSeries",
+                      "stacked": true,
+                      "region": "us-east-1",
+                      "stat": "Maximum",
+                      "period": 10,
+                      "yAxis": {
+                          "left": {
+                              "label": "",
+                              "showUnits": false
+                          }
+                      },
+                      "title": "Primary Consumer Latency (milliseconds)",
+                      "setPeriodToTimeRange": true,
+                      "sparkline": false,
+                      "trend": false,
+                      "labels": {
+                          "visible": true
+                      }
+                  }
+              },
+              {
+                  "height": 9,
+                  "width": 24,
+                  "y": 17,
+                  "x": 0,
+                  "type": "metric",
+                  "properties": {
+                      "metrics": [
+                          [ { "expression": "m2 - m1", "label": "DrConsumerDelay (milliseconds)", "id": "e1", "region": "us-east-1" } ],
+                          [ "SnsSqsMultiRegion", "Latency", "ServiceName", "SqsConsumer", { "region": "us-east-1", "id": "m1", "visible": false } ],
+                          [ "...", { "region": "us-west-2", "id": "m2", "visible": false } ]
+                      ],
+                      "view": "timeSeries",
+                      "stacked": true,
+                      "region": "us-east-1",
+                      "stat": "Maximum",
+                      "period": 10,
+                      "yAxis": {
+                          "left": {
+                              "label": "",
+                              "showUnits": false
+                          }
+                      },
+                      "title": "Cross-region Latency (milliseconds)"
+                  }
+              },
+              {
+                  "height": 7,
+                  "width": 12,
+                  "y": 0,
+                  "x": 0,
+                  "type": "text",
+                  "properties": {
+                      "markdown": "# Consumer Latency Dashboard\n\n\nThis dashboard display the consumer latency, both on the primary and secondary region. This is how the latencies are calculated:\nMetric|Description| More details\n----|------|-----\nSnsLatency | WIP | WIP |\nSqsLatency | WIP| WIP |\nConsumer Latency | WIP | WIP |\n\n\n",
+                      "background": "transparent"
+                  }
+              }
+          ]
+        }
+
               
 Outputs:
   SnsTopicArn:

@@ -69,7 +69,7 @@ class SnsLoadProducer
 end
 
 IS_PRIMARY_ENV = true
-NUM_MESSAGES = 1
+NUM_MESSAGES = 5000
 BATCH_SIZE = 500
 
 producer = SnsLoadProducer.new(NUM_MESSAGES, BATCH_SIZE, IS_PRIMARY_ENV)
