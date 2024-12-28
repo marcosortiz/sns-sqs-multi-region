@@ -26,9 +26,11 @@ class SnsLoadProducer
     count = 0
     
     @num_messages.times do |i|
-      recorded_at = Time.now.utc.iso8601(6)
+      now = Time.now.utc
+      current_time = (now.to_f * 1000).to_i
+      recorded_at = now.iso8601(6)
       job_id = "#{recorded_at}|#{@num_messages}|#{@batch_size}"
-      msg = { recorded_at: recorded_at, job_id: job_id, task_id: i + 1 }.to_json
+      msg = { recorded_at: current_time, job_id: job_id, task_id: i + 1 }.to_json
       messages << msg
     end
 

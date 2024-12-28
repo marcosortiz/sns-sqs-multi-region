@@ -17,12 +17,11 @@ class SnsProducer
   end
 
   def send_message
-    recorded_at = Time.now.utc.iso8601(6)
+    recorded_at = (Time.now.utc.to_f*1000).to_i
     log('Sending message ...')
 
     message = JSON.generate({
-      recorded_at: recorded_at,
-      task_id: recorded_at
+      recorded_at: recorded_at
     })
     response = @sns.publish({
         topic_arn: @topic_arn,

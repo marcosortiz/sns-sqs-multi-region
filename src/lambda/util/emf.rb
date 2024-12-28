@@ -10,8 +10,10 @@ class EmfLogger
         retries: {name: 'Retries', unit: 'Count'},
         duration: {name: 'Duration', unit: 'Seconds'},
         process_rate: {name: 'ProcessingRate', unit: 'Count/Second'},
-        sns_to_sqs_latency: {name: 'SnsToSqSLatency', unit: 'Milliseconds'},
+        producer_to_sns_latency: {name: 'ProducerToSnsLatency', unit: 'Milliseconds'},
+        sns_to_sqs_latency: {name: 'SnsToSqsLatency', unit: 'Milliseconds'},
         sqs_to_lambda_lacency: {name: 'SqsToLambdaLatency', unit: 'Milliseconds'},
+        lambda_to_code_latency: {name: 'LambdaToCodeLatency', unit: 'Milliseconds'},
         latency: {name: 'Latency', unit: 'Milliseconds'}
     }
 
