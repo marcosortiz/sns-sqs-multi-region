@@ -25,19 +25,21 @@ class SqsWorker
                 
                 # Putting all timestamps in milliseconds
                 recorded_at = message['recorded_at']
-                sns_timestamp = (Time.parse(body['Timestamp']).to_f*1000).to_i
+                sns_timestamp = (Time.parse(body['Timestamp']).to_f*1000).to_i rescue nil
                 sqs_sent_timestamp = record['attributes']['SentTimestamp'].to_i
                 sqs_aprox_timestamp_rcv = record['attributes']['ApproximateFirstReceiveTimestamp'].to_i
 
-                producer_to_sns_latency = sns_timestamp - recorded_at
-                sns_to_sqs_latency = sqs_sent_timestamp - sns_timestamp
+                producer_to_sns_latency = sns_timestamp - recorded_at if sns_timestamp
+                sns_to_sqs_latency = sqs_sent_timestamp - sns_timestamp if sns_timestamp
                 sqs_to_lambda_lacency = sqs_aprox_timestamp_rcv - sqs_sent_timestamp
                 lambda_to_code_latency = current_time - sqs_aprox_timestamp_rcv
                 latency = current_time - recorded_at
                 
                 mutex.synchronize do
-                  producer_to_sns_latencies << producer_to_sns_latency
-                  sns_to_sqs_latencies << sns_to_sqs_latency
+                  if sns_timestamp
+                    producer_to_sns_latencies << producer_to_sns_latency
+                    sns_to_sqs_latencies << sns_to_sqs_latency  
+                  end
                   sqs_to_lambda_lacencies << sqs_to_lambda_lacency
                   lambda_to_code_latencies << lambda_to_code_latency
                   latencies << latency
@@ -74,7 +76,8 @@ class SqsWorker
         end
       
         elapsed_time = Time.now - t0
-        {
+
+        return_hash = {
           report: {
             batch_size: records.length,
             success_count: records.length - failed_count,
@@ -82,14 +85,16 @@ class SqsWorker
             retries: [max_retries, failed_records.empty? ? max_retries : max_retries - 1].min,
             duration: elapsed_time,
             process_rate: (records.length - failed_count) / elapsed_time,
-            producer_to_sns_latency: producer_to_sns_latencies.max,
-            sns_to_sqs_latency: sns_to_sqs_latencies.max,
             sqs_to_lambda_lacency: sqs_to_lambda_lacencies.max,
             lambda_to_code_latency: lambda_to_code_latencies.max,
             latency: latencies.max
           },
           failed_records: failed_records
         }
+      
+        return_hash[:report][:producer_to_sns_latency] = producer_to_sns_latencies.max unless producer_to_sns_latencies.empty?
+        return_hash[:report][:sns_to_sqs_latency] = sns_to_sqs_latencies.max unless sns_to_sqs_latencies.empty?
+        return_hash
     end
       
 
