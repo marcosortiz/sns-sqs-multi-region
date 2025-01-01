@@ -6,6 +6,7 @@ class SqsWorker
         t0 = Time.now
         failed_records = []
         producer_to_sns_latencies = []
+        producer_to_sqs_latencies = []
         sns_to_sqs_latencies = []
         sqs_to_lambda_lacencies = []
         lambda_to_code_latencies = []
@@ -23,26 +24,18 @@ class SqsWorker
                 is_sns_originated = is_sns_originated(body)
                 message = parse_message(body, is_sns_originated)
 
-                # Putting all timestamps in milliseconds
-                recorded_at = message['recorded_at']
-                sns_timestamp = (Time.parse(body['Timestamp']).to_f*1000).to_i if is_sns_originated
-                sqs_sent_timestamp = record['attributes']['SentTimestamp'].to_i
-                sqs_aprox_timestamp_rcv = record['attributes']['ApproximateFirstReceiveTimestamp'].to_i
-
-                producer_to_sns_latency = sns_timestamp - recorded_at if is_sns_originated
-                sns_to_sqs_latency = sqs_sent_timestamp - sns_timestamp if is_sns_originated
-                sqs_to_lambda_lacency = sqs_aprox_timestamp_rcv - sqs_sent_timestamp
-                lambda_to_code_latency = current_time - sqs_aprox_timestamp_rcv
-                latency = current_time - recorded_at
+                calculate_latencies = calculate_latencies(record, body, message, is_sns_originated, current_time)
                 
                 mutex.synchronize do
                   if is_sns_originated
-                    producer_to_sns_latencies << producer_to_sns_latency
-                    sns_to_sqs_latencies << sns_to_sqs_latency  
+                    producer_to_sns_latencies << calculate_latencies[:producer_to_sns_latency]
+                    sns_to_sqs_latencies << calculate_latencies[:sns_to_sqs_latency]
+                  else
+                    producer_to_sqs_latencies << calculate_latencies[:producer_to_sqs_latency]
                   end
-                  sqs_to_lambda_lacencies << sqs_to_lambda_lacency
-                  lambda_to_code_latencies << lambda_to_code_latency
-                  latencies << latency
+                  sqs_to_lambda_lacencies << calculate_latencies[:sqs_to_lambda_lacency]
+                  lambda_to_code_latencies << calculate_latencies[:lambda_to_code_latency]
+                  latencies << calculate_latencies[:latency]
                 end
                 
                 success = process_record(message)
@@ -93,6 +86,7 @@ class SqsWorker
         }
       
         return_hash[:report][:producer_to_sns_latency] = producer_to_sns_latencies.max unless producer_to_sns_latencies.empty?
+        return_hash[:report][:producer_to_sqs_latency] = producer_to_sqs_latencies.max unless producer_to_sqs_latencies.empty?
         return_hash[:report][:sns_to_sqs_latency] = sns_to_sqs_latencies.max unless sns_to_sqs_latencies.empty?
         return_hash
     end
@@ -120,7 +114,27 @@ class SqsWorker
       return message   
     end
 
-    def calculate_latencies(is_sns_originated)
+    def calculate_latencies(record, body, message, is_sns_originated, current_time)
+      latencies = {}
+
+      recorded_at = message['recorded_at']
+       
+      sqs_sent_timestamp = record['attributes']['SentTimestamp'].to_i
+      sqs_aprox_timestamp_rcv = record['attributes']['ApproximateFirstReceiveTimestamp'].to_i
+
+      if is_sns_originated
+        sns_timestamp = (Time.parse(body['Timestamp']).to_f*1000).to_i
+        latencies[:producer_to_sns_latency] = sns_timestamp - recorded_at
+        latencies[:sns_to_sqs_latency]= sqs_sent_timestamp - sns_timestamp
+      else
+        latencies[:producer_to_sqs_latency] = sqs_aprox_timestamp_rcv - recorded_at
+      end
+
+      latencies[:sqs_to_lambda_lacency] = sqs_aprox_timestamp_rcv - sqs_sent_timestamp
+      latencies[:lambda_to_code_latency] = current_time - sqs_aprox_timestamp_rcv
+      latencies[:latency] = current_time - recorded_at
+
+      return latencies
     end
 
 end

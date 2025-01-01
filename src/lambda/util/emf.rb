@@ -11,6 +11,7 @@ class EmfLogger
         duration: {name: 'Duration', unit: 'Seconds'},
         process_rate: {name: 'ProcessingRate', unit: 'Count/Second'},
         producer_to_sns_latency: {name: 'ProducerToSnsLatency', unit: 'Milliseconds'},
+        producer_to_sqs_latency: {name: 'ProducerToSqsLatency', unit: 'Milliseconds'},
         sns_to_sqs_latency: {name: 'SnsToSqsLatency', unit: 'Milliseconds'},
         sqs_to_lambda_lacency: {name: 'SqsToLambdaLatency', unit: 'Milliseconds'},
         lambda_to_code_latency: {name: 'LambdaToCodeLatency', unit: 'Milliseconds'},
