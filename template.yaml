@@ -133,67 +133,6 @@ Resources:
             MaximumBatchingWindowInSeconds: 0
             FunctionResponseTypes:
               - ReportBatchItemFailures
-  SqsMultiRegionCustomEventBus:
-    Type: AWS::Events::EventBus
-    Properties:
-      Name: SqsMultiRegionCustomEventBus
-  EventConsumerRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Policies:
-        - PolicyName: EventBridgeCustomBusAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - events:ReceiveEvent
-                Resource: !GetAtt SqsMultiRegionCustomEventBus.Arn
-  EventConsumerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: event-bridge-consumer.handler
-      Runtime: ruby3.3
-      CodeUri: src/lambda
-      Timeout: 30
-      MemorySize: 512
-      Role: !GetAtt EventConsumerRole.Arn
-      Events:
-        CustomEvent:
-          Type: EventBridgeRule
-          Properties:
-            EventBusName: !Ref SqsMultiRegionCustomEventBus
-            Pattern:
-              source:
-                - "custom.events"
-              detail-type:
-                - "CustomEvent"
-  SNSConsumerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: sns-consumer.handler
-      Runtime: ruby3.3  # Adjust based on your Ruby version
-      CodeUri: src/lambda
-      Description: Lambda function to process SNS messages
-      Timeout: 30
-      MemorySize: 128
-      Policies:
-        - SNSCrudPolicy: # Gives permission to receive messages from SNS
-            TopicName: !GetAtt SnsTopic.TopicName
-      Events:
-        SNSEvent:
-          Type: SNS
-          Properties:
-            Topic: !Ref SnsTopic
   SnsSqSMultiRegion:
     Type: AWS::CloudWatch::Dashboard
     Properties:
@@ -272,20 +211,14 @@ Resources:
                 }
             ]
         }
-
-              
+      
 Outputs:
   SnsTopicArn:
     Value: !Ref SnsTopic
     Description: SNS Topic Arn
-
   ActiveQueueUrl:
     Value: !GetAtt ActiveQueue.QueueUrl
     Description: Active Queue Url
-
   DisasterRecoveryQueueArn:
     Value: !GetAtt DisasterRecoveryQueue.Arn
     Description: DR QUEUE Arn
-  EventBusName:
-    Value: !Ref SqsMultiRegionCustomEventBus
-    Description: Name of the custom Event Bus

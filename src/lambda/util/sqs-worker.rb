@@ -20,23 +20,23 @@ class SqsWorker
               current_time = (Time.now.to_f*1000).to_i
               slice.each do |record|
                 body = JSON.parse(record['body'])
-                message = JSON.parse(body['Message'])
+                is_sns_originated = is_sns_originated(body)
+                message = parse_message(body, is_sns_originated)
 
-                
                 # Putting all timestamps in milliseconds
                 recorded_at = message['recorded_at']
-                sns_timestamp = (Time.parse(body['Timestamp']).to_f*1000).to_i rescue nil
+                sns_timestamp = (Time.parse(body['Timestamp']).to_f*1000).to_i if is_sns_originated
                 sqs_sent_timestamp = record['attributes']['SentTimestamp'].to_i
                 sqs_aprox_timestamp_rcv = record['attributes']['ApproximateFirstReceiveTimestamp'].to_i
 
-                producer_to_sns_latency = sns_timestamp - recorded_at if sns_timestamp
-                sns_to_sqs_latency = sqs_sent_timestamp - sns_timestamp if sns_timestamp
+                producer_to_sns_latency = sns_timestamp - recorded_at if is_sns_originated
+                sns_to_sqs_latency = sqs_sent_timestamp - sns_timestamp if is_sns_originated
                 sqs_to_lambda_lacency = sqs_aprox_timestamp_rcv - sqs_sent_timestamp
                 lambda_to_code_latency = current_time - sqs_aprox_timestamp_rcv
                 latency = current_time - recorded_at
                 
                 mutex.synchronize do
-                  if sns_timestamp
+                  if is_sns_originated
                     producer_to_sns_latencies << producer_to_sns_latency
                     sns_to_sqs_latencies << sns_to_sqs_latency  
                   end
@@ -109,4 +109,18 @@ class SqsWorker
             return false
         end
     end
+
+    def is_sns_originated(parsed_json_body)
+      parsed_json_body['Type'] == 'Notification' && parsed_json_body['TopicArn']
+    end
+
+    def parse_message(parsed_json_body, is_sns_originated)
+      message = parsed_json_body
+      message = JSON.parse(parsed_json_body['Message']) if is_sns_originated
+      return message   
+    end
+
+    def calculate_latencies(is_sns_originated)
+    end
+
 end

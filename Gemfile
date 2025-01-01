@@ -1,4 +1,4 @@
 source "https://rubygems.org"
 
-gem 'aws-sdk-eventbridge'
 gem 'aws-sdk-sns'
+gem 'aws-sdk-sqs'

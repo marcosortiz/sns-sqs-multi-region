@@ -7,6 +7,7 @@ WORKER = SqsWorker.new()
 EMF = EmfLogger.new('SnsSqsMultiRegion', 'SqsConsumer')
 
 def handler(event:, context:)
+  # puts event
   records = event['Records']
   puts "Processing #{records.length} records"
   resp = WORKER.batch_process_records(records, 3, 5)
