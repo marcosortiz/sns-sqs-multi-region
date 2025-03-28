@@ -1,7 +1,14 @@
 # SQS Multi-Region: SNS Fan-Out Pattern
 
-## Deployment Instructions
+Amazon Simple Queue Service (SQS) is widely adopted by organizations for its ability to reliably decouple microservices, process event-driven applications, and handle high-volume message delivery without infrastructure management overhead. As businesses face increasing demands for 24/7 availability and regulatory requirements for geographic redundancy, many are exploring multi-region architectures to enhance their messaging systems' resilience against regional outages. To address this need, Amazon SNS's cross-region delivery capabilities allow messages to be sent to SQS queues in different regions, enabling customers to implement robust, fault-tolerant messaging architectures that span multiple AWS regions, thus ensuring business continuity and maintaining message integrity even during localized disruptions.
 
+![alt text](images/diagram.jpg)
+
+## Deployment Instructions
+1. Create a new directory, navigate to that directory in a terminal and clone the GitHub repository:
+    ```
+    git clone https://github.com/marcosortiz/sns-sqs-multi-region.git
+    ```
 1. Change directory to:
     ```
     cd sns-sqs-multi-region
@@ -53,7 +60,7 @@ WIP
     sam delete --config-env secondary
     ```
 
-## Consumer Latency Dashboard
+## Consumer Dashboard
 This dashboard display the consumer latency, both on the primary and secondary region.
 
 
