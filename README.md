@@ -13,33 +13,22 @@ Amazon Simple Queue Service (SQS) is widely adopted by organizations for its abi
     ```
     cd sns-sqs-multi-region
     ```
-1. From the command line, use AWS SAM to deploy the AWS resources for the stack as specified in the template.yml file on the primary Region:
+1. [Optional] Configure your regions. By defaut, we will deploy stacks on us-east-1 and us-west-2. If you want to change those regions, edit ./bin/config.sh, on lines 5 and 6:
+    ```bash
+    #!/bin/bash
+    export STACK_NAME=sns-sqs-multi-region
+    export PRIMARY_ENV=primary
+    export SECONDARY_ENV=secondary
+    export PRIMARY_REGION=us-east-1
+    export SECONDARY_REGION=us-west-2
     ```
-    sam deploy --guided --config-env primary
-    ```
-1. During the prompts:
-    * **Stack Name:** Enter a stack name.
-    * **AWS Region:** Enter the desired primary AWS Region. This stack has been tested with both us-east-1 and us-east-2.
-    * Allow SAM CLI to create IAM roles with the required permissions.
-    * Allow SAM CLI to create the Service1LambdaRegionalApi Lambda function.
-    * **SAM configuration environment** Accept the **primary** default value.
 
-    Once you have run `sam deploy --guided --config-env primary` mode once and saved arguments to a configuration file (samconfig.toml), you can use `sam deploy --config-env primary` in future to use these defaults.
-
-1. From the command line, use AWS SAM to deploy the AWS resources for the stack as specified in the template.yml file on the primary Region:
+1. From the command line, use shell script to deploy the AWS resources for the stack as specified in the template.yml file on the primary Region:
     ```
-    sam deploy --guided --config-env secondary --output-file config/secondary.json
+    ./bin/deploy-stacks.sh 
     ```
-1. During the prompts:
-    * **Stack Name:** Enter a stack name.
-    * **AWS Region:** Enter the desired secondary AWS Region. This stack has been tested with both us-east-1 and us-east-2. **Make sure to use a different Region from the primary one**.
-    * Allow SAM CLI to create IAM roles with the required permissions.
-    * Allow SAM CLI to create the Service1LambdaRegionalApi Lambda function.
-    * **SAM configuration environment** Accept the **primary** default value.
 
-    Once you have run `sam deploy --guided --config-env secondary` mode once and saved arguments to a configuration file (samconfig.toml), you can use `sam deploy --config-env secondary` in future to use these defaults.
-    
-1. Note the outputs from the SAM deployment process. These contain details which are used for testing.
+
 
 ## How it works
 
@@ -51,14 +40,10 @@ WIP
 
 ## Cleanup
  
-1. Delete the stack on the primary Region.
-    ```bash
-    sam delete --config-env primary
-    ```
-1. Delete the stack on the secondary Region.
-    ```bash
-    sam delete --config-env secondary
-    ```
+Delete the stacks on both regions:
+```bash
+./bin/delete-stacks.sh 
+```
 
 ## Consumer Dashboard
 This dashboard display the consumer latency, both on the primary and secondary region.
