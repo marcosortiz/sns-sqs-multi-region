@@ -2,6 +2,20 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: 'Cross-region SNS-SQS-Lambda setup'
 
+Parameters:
+  CreateDashboard:
+    Type: String
+    Default: 'false'
+    AllowedValues: 
+      - 'true'
+      - 'false'
+    Description: Set to true to create CloudWatch dashboard
+
+Conditions:
+  ShouldCreateDashboard: !Equals 
+    - !Ref CreateDashboard
+    - 'true'
+
 Resources:
   ActiveQueue:
     Type: AWS::SQS::Queue
@@ -135,6 +149,8 @@ Resources:
               - ReportBatchItemFailures
   SnsSqSMultiRegion:
     Type: AWS::CloudWatch::Dashboard
+    Condition: ShouldCreateDashboard
+    DeletionPolicy: Delete
     Properties:
       DashboardBody: |
         {
@@ -222,3 +238,7 @@ Outputs:
   DisasterRecoveryQueueArn:
     Value: !GetAtt DisasterRecoveryQueue.Arn
     Description: DR QUEUE Arn
+  DashboardUrl:
+    Condition: ShouldCreateDashboard
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${SnsSqSMultiRegion}"
+    Description: URL for the CloudWatch Dashboard

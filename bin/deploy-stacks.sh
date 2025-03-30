@@ -4,7 +4,7 @@ source "$SCRIPT_DIR/config.sh"
 
 
 echo "Deploying the stack on ${PRIMARY_REGION} ..."
-sam deploy --stack-name $STACK_NAME --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3
+sam deploy --stack-name $STACK_NAME --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 --parameter-overrides CreateDashboard=true
 aws cloudformation describe-stacks --stack-name $STACK_NAME --region $PRIMARY_REGION --query 'Stacks[0].Outputs' --output json > config/$PRIMARY_ENV.json
 
 echo "Deploying the stack on ${SECONDARY_REGION} ..."

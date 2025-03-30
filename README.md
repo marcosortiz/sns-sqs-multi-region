@@ -13,6 +13,10 @@ Amazon Simple Queue Service (SQS) is widely adopted by organizations for its abi
     ```
     cd sns-sqs-multi-region
     ```
+1. Give execution permission to the shell scripts:
+    ```
+    chmod +x ./bin/*
+    ```
 1. [Optional] Configure your regions. By defaut, we will deploy stacks on us-east-1 and us-west-2. If you want to change those regions, edit ./bin/config.sh, on lines 5 and 6:
     ```bash
     #!/bin/bash
@@ -36,7 +40,16 @@ This stack will deploy an Amazon API Gateway Rest Regional API with a Lambda int
 
 ## Testing
 
-WIP
+1. Install libraries:
+    ```
+    bundle install
+    ```
+
+1. Run a load test. You can change the last param to the total number of messages you want to send:
+    ```
+    ./bin/run-load-test.sh
+    ```
+
 
 ## Cleanup
  
