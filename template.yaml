@@ -156,39 +156,6 @@ Resources:
         {
             "widgets": [
                 {
-                    "height": 10,
-                    "width": 24,
-                    "y": 9,
-                    "x": 0,
-                    "type": "metric",
-                    "properties": {
-                        "metrics": [
-                            [ "SnsSqsMultiRegion", "SqsToLambdaLatency", "ServiceName", "SqsConsumer", { "region": "us-east-1" } ],
-                            [ ".", "ProducerToSnsLatency", ".", ".", { "region": "us-east-1" } ],
-                            [ ".", "LambdaToCodeLatency", ".", ".", { "region": "us-east-1" } ],
-                            [ ".", "SnsToSqsLatency", ".", "." ]
-                        ],
-                        "view": "timeSeries",
-                        "stacked": true,
-                        "region": "us-east-1",
-                        "stat": "Maximum",
-                        "period": 10,
-                        "yAxis": {
-                            "left": {
-                                "label": "",
-                                "showUnits": false
-                            }
-                        },
-                        "title": "Primary Consumer Latency (milliseconds)",
-                        "setPeriodToTimeRange": true,
-                        "sparkline": false,
-                        "trend": false,
-                        "labels": {
-                            "visible": true
-                        }
-                    }
-                },
-                {
                     "height": 9,
                     "width": 24,
                     "y": 19,
@@ -196,9 +163,8 @@ Resources:
                     "type": "metric",
                     "properties": {
                         "metrics": [
-                            [ { "expression": "m2 - m1", "label": "DrConsumerDelay (milliseconds)", "id": "e1", "region": "us-east-1" } ],
-                            [ "SnsSqsMultiRegion", "Latency", "ServiceName", "SqsConsumer", { "region": "us-east-1", "id": "m1", "visible": false } ],
-                            [ "...", { "region": "us-west-2", "id": "m2", "visible": false } ]
+                            [ "SnsSqsMultiRegion", "Latency", "ServiceName", "SqsConsumer", { "region": "us-east-1", "id": "m1", "visible": true } ],
+                            [ "...", { "region": "us-west-2", "id": "m2", "visible": true } ]
                         ],
                         "view": "timeSeries",
                         "stacked": true,
@@ -211,18 +177,7 @@ Resources:
                                 "showUnits": false
                             }
                         },
-                        "title": "Cross-region Latency (milliseconds)"
-                    }
-                },
-                {
-                    "height": 9,
-                    "width": 24,
-                    "y": 0,
-                    "x": 0,
-                    "type": "text",
-                    "properties": {
-                        "markdown": "# Consumer Latency Dashboard\nThis dashboard display the consumer latency, both on the primary and secondary region.\n\n\nWe use the following attributes to calculate messag elatencies:\nAttribute|Source| Description\n----|------|-----\nrecorded_at | Producer |The time the message was created by the producer. The format is the number of milliseconds since the [Epoch](https://en.wikipedia.org/wiki/Epoch_(computing)).|\nTimestamp | SNS |The time when the message was received by SNS. [Learn more](https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html)|\nSentTimestamp | SQS |The time the message was successfully added to the queue (epoch time in milliseconds) [Learn more](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html)|\nApproximateFirstReceiveTimestamp | SQS |The time the message was first received from the queue by a consumer.  [Learn more](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html)|\n\n\nNotes:\n- The timestamp field needs better documentation (meaning and format)\n\n\nThis is how the latencies are calculated:\nMetric|Description| More details\n----|------|-----\nsns_to_sqs_latency | WIP | ApproximateFirstReceiveTimestamp - SentTimestamp |\nsqs_to_lambda_latency | WIP| current_time - ApproximateFirstReceiveTimestamp |\nconsumer_latency | WIP | current_time - recorded_at |\nWhere current_time is the execution time when the Lambda function started processing the message.\n\n\n",
-                        "background": "transparent"
+                        "title": "Consumer Latency (milliseconds)"
                     }
                 }
             ]
