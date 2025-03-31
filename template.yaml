@@ -10,6 +10,16 @@ Parameters:
       - 'true'
       - 'false'
     Description: Set to true to create CloudWatch dashboard
+  PrimaryRegion:
+    Type: String
+    Default: 'us-east-1'
+    Description: Primary region for deployment
+    AllowedPattern: '^[a-z]{2}-[a-z]+-\d+$'
+  SecondaryRegion:
+    Type: String
+    Default: 'us-west-2'
+    Description: Secondary region for disaster recovery
+    AllowedPattern: '^[a-z]{2}-[a-z]+-\d+$'
 
 Conditions:
   ShouldCreateDashboard: !Equals 
@@ -152,7 +162,7 @@ Resources:
     Condition: ShouldCreateDashboard
     DeletionPolicy: Delete
     Properties:
-      DashboardBody: |
+      DashboardBody: !Sub |
         {
             "widgets": [
                 {
@@ -163,12 +173,12 @@ Resources:
                     "type": "metric",
                     "properties": {
                         "metrics": [
-                            [ "SnsSqsMultiRegion", "Latency", "ServiceName", "SqsConsumer", { "region": "us-east-1", "id": "m1", "visible": true } ],
-                            [ "...", { "region": "us-west-2", "id": "m2", "visible": true } ]
+                            [ "SnsSqsMultiRegion", "Latency", "ServiceName", "SqsConsumer", { "region": "${PrimaryRegion}", "id": "m1", "visible": true } ],
+                            [ "...", { "region": "${SecondaryRegion}", "id": "m2", "visible": true } ]
                         ],
                         "view": "timeSeries",
                         "stacked": true,
-                        "region": "us-east-1",
+                        "region": "${PrimaryRegion}",
                         "stat": "Maximum",
                         "period": 10,
                         "yAxis": {
@@ -178,6 +188,26 @@ Resources:
                             }
                         },
                         "title": "Consumer Latency (milliseconds)"
+                    }
+                },
+                {
+                    "height": 8,
+                    "width": 24,
+                    "y": 9,
+                    "x": 0,
+                    "type": "metric",
+                    "properties": {
+                        "metrics": [
+                            [ "AWS/SQS", "NumberOfMessagesDeleted", "QueueName", "sns-sqs-multi-region-ActiveQueue-awrqmxQVPUea", { "region": "${PrimaryRegion}", "label": "primary queue" } ],
+                            [ "...", "sns-sqs-multi-region-DisasterRecoveryQueue-gSOrJpTgG01w", { "region": "${SecondaryRegion}", "label": "dr queue" } ]
+                        ],
+                        "view": "timeSeries",
+                        "stacked": true,
+                        "region": "${PrimaryRegion}",
+                        "setPeriodToTimeRange": true,
+                        "title": "Messages Processed Per Min",
+                        "stat": "Sum",
+                        "period": 60
                     }
                 }
             ]

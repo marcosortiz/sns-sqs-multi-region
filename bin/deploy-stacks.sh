@@ -4,11 +4,11 @@ source "$SCRIPT_DIR/config.sh"
 
 
 echo "Deploying the stack on ${PRIMARY_REGION} ..."
-sam deploy --stack-name $STACK_NAME --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 --parameter-overrides CreateDashboard=true
+sam deploy --stack-name $STACK_NAME --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 --parameter-overrides CreateDashboard=true PrimaryRegion=$PRIMARY_REGION SecondaryRegion=$SECONDARY_REGION
 aws cloudformation describe-stacks --stack-name $STACK_NAME --region $PRIMARY_REGION --query 'Stacks[0].Outputs' --output json > config/$PRIMARY_ENV.json
 
 echo "Deploying the stack on ${SECONDARY_REGION} ..."
-sam deploy --stack-name $STACK_NAME --region $SECONDARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3
+sam deploy --stack-name $STACK_NAME --region $SECONDARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 --parameter-overrides CreateDashboard=false PrimaryRegion=$PRIMARY_REGION SecondaryRegion=$SECONDARY_REGION
 aws cloudformation describe-stacks --stack-name $STACK_NAME --region $SECONDARY_REGION --query 'Stacks[0].Outputs' --output json > config/$SECONDARY_ENV.json
 
 # Combine the outputs into a single JSON file

@@ -13,10 +13,6 @@ Amazon Simple Queue Service (SQS) is widely adopted by organizations for its abi
     ```
     cd sns-sqs-multi-region
     ```
-1. Give execution permission to the shell scripts:
-    ```
-    chmod +x ./bin/*
-    ```
 1. [Optional] Configure your regions. By defaut, we will deploy stacks on us-east-1 and us-west-2. If you want to change those regions, edit ./bin/config.sh, on lines 5 and 6:
     ```bash
     #!/bin/bash
@@ -44,11 +40,30 @@ This stack will deploy an Amazon API Gateway Rest Regional API with a Lambda int
     ```
     bundle install
     ```
+1. Give execution permission to the shell scripts:
+    ```
+    chmod +x ./bin/*
+    ```
+1. run the producer:
+    ```
+    ./bin/run-producer.sh 
+    ```
 
-1. Run a load test. You can change the last param to the total number of messages you want to send:
+    You will see that every second, the producer sends a message to the SNS topic, with a JSON payload with the timestamp when the message was generated, in unix format.
+
     ```
-    ./bin/run-load-test.sh
+    [15:10:13.000] Sending message {"recorded_at":1743433813000} ...
+    [15:10:14.000] Sending message {"recorded_at":1743433814000} ...
+    [15:10:15.000] Sending message {"recorded_at":1743433815000} ...
+    [15:10:16.000] Sending message {"recorded_at":1743433816000} ...
+    [15:10:17.000] Sending message {"recorded_at":1743433817000} ...
+    [15:10:18.000] Sending message {"recorded_at":1743433818000} ...
+    [15:10:19.000] Sending message {"recorded_at":1743433819000} ...
+    [15:10:20.000] Sending message {"recorded_at":1743433820000} ...
     ```
+
+    We will use the recorded_at field on the message consumer, to calculate the delay from the time the message was generate and consumed. This will give us an indication of how far behind our cross-region consumer tipycally is.
+
 
 
 ## Cleanup
