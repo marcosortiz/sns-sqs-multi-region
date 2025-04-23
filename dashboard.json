@@ -38,7 +38,7 @@
             "properties": {
                 "metrics": [
                     [ "AWS/SQS", "NumberOfMessagesReceived", "QueueName", "${PrimaryQueueName}", { "region": "${PrimaryRegion}", "label": "primary queue" } ],
-                    [ "...", "${SecondaryQueueName}", { "region": "${SecondaryRegion}", "label": "dr queue" } ]
+                    [ "...", "${SecondaryDrQueueName}", { "region": "${SecondaryRegion}", "label": "dr queue" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": true,

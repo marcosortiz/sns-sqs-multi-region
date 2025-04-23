@@ -36,8 +36,7 @@ PRIMARY_TOPIC_NAME=${PRIMARY_TOPIC_ARN##*:}
 SECONDARY_TOPIC_NAME=${SECONDARY_TOPIC_ARN##*:}
 PRIMARY_QUEUE_URL=$(jq -r '.primary.ActiveQueueUrl' config/config.json)
 PRIMARY_QUEUE_NAME=${PRIMARY_QUEUE_URL##*/}
-SECONDARY_QUEUE_URL=$(jq -r '.secondary.ActiveQueueUrl' config/config.json)
-SECONDARY_QUEUE_NAME=${SECONDARY_QUEUE_URL##*/}
+SECONDARY_DR_QUEUE_NAME=${SECONDARY_DR_QUEUE_ARN##*:}
 
 echo "Deploying the cross region SNS to SQS DR subscriptions ..."
 sam deploy --stack-name "$STACK_NAME-dr-subscriptions"  --template-file subscriptions.yaml --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 \
@@ -54,7 +53,7 @@ DASHBOARD_BODY=$(cat dashboard.json | \
     sed "s/\${PrimaryRegion}/${PRIMARY_REGION}/g" | \
     sed "s/\${SecondaryRegion}/${SECONDARY_REGION}/g" | \
     sed "s/\${PrimaryQueueName}/${PRIMARY_QUEUE_NAME}/g" | \
-    sed "s/\${SecondaryQueueName}/${SECONDARY_QUEUE_NAME}/g" | \
+    sed "s/\${SecondaryDrQueueName}/${SECONDARY_DR_QUEUE_NAME}/g" | \
     sed "s/\${PrimaryTopicName}/${PRIMARY_TOPIC_NAME}/g" | \
     sed "s/\${SecondaryTopicName}/${SECONDARY_TOPIC_NAME}/g")
 DASHBOARD_BODY=$(echo "$DASHBOARD_BODY" | jq -c '.' | jq -R .) # Then compact and escape
