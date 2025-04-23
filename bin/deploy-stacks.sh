@@ -2,13 +2,12 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source "$SCRIPT_DIR/config.sh"
 
-
 echo "Deploying the stack on ${PRIMARY_REGION} ..."
-sam deploy --stack-name $STACK_NAME --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 --parameter-overrides CreateDashboard=true PrimaryRegion=$PRIMARY_REGION SecondaryRegion=$SECONDARY_REGION
+sam deploy --stack-name $STACK_NAME --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 --parameter-overrides PrimaryRegion=$PRIMARY_REGION SecondaryRegion=$SECONDARY_REGION
 aws cloudformation describe-stacks --stack-name $STACK_NAME --region $PRIMARY_REGION --query 'Stacks[0].Outputs' --output json > config/$PRIMARY_ENV.json
 
 echo "Deploying the stack on ${SECONDARY_REGION} ..."
-sam deploy --stack-name $STACK_NAME --region $SECONDARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 --parameter-overrides CreateDashboard=false PrimaryRegion=$PRIMARY_REGION SecondaryRegion=$SECONDARY_REGION
+sam deploy --stack-name $STACK_NAME --region $SECONDARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 --parameter-overrides PrimaryRegion=$PRIMARY_REGION SecondaryRegion=$SECONDARY_REGION
 aws cloudformation describe-stacks --stack-name $STACK_NAME --region $SECONDARY_REGION --query 'Stacks[0].Outputs' --output json > config/$SECONDARY_ENV.json
 
 # Combine the outputs into a single JSON file
@@ -33,6 +32,12 @@ PRIMARY_TOPIC_ARN=$(jq -r '.primary.SnsTopicArn' config/config.json)
 PRIMARY_DR_QUEUE_ARN=$(jq -r '.primary.DisasterRecoveryQueueArn' config/config.json)
 SECONDARY_TOPIC_ARN=$(jq -r '.secondary.SnsTopicArn' config/config.json)
 SECONDARY_DR_QUEUE_ARN=$(jq -r '.secondary.DisasterRecoveryQueueArn' config/config.json)
+PRIMARY_TOPIC_NAME=${PRIMARY_TOPIC_ARN##*:}
+SECONDARY_TOPIC_NAME=${SECONDARY_TOPIC_ARN##*:}
+PRIMARY_QUEUE_URL=$(jq -r '.primary.ActiveQueueUrl' config/config.json)
+PRIMARY_QUEUE_NAME=${PRIMARY_QUEUE_URL##*/}
+SECONDARY_QUEUE_URL=$(jq -r '.secondary.ActiveQueueUrl' config/config.json)
+SECONDARY_QUEUE_NAME=${SECONDARY_QUEUE_URL##*/}
 
 echo "Deploying the cross region SNS to SQS DR subscriptions ..."
 sam deploy --stack-name "$STACK_NAME-dr-subscriptions"  --template-file subscriptions.yaml --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 \
@@ -43,3 +48,14 @@ sam deploy --stack-name "$STACK_NAME-dr-subscriptions"  --template-file subscrip
           --parameter-overrides \
           SnsTopicArn=$SECONDARY_TOPIC_ARN \
           QueueArn=$PRIMARY_DR_QUEUE_ARN
+
+DASHBOARD_BODY=$(cat dashboard.json | \
+    sed "s/\${AWS::Region}/${PRIMARY_REGION}/g" | \
+    sed "s/\${PrimaryRegion}/${PRIMARY_REGION}/g" | \
+    sed "s/\${SecondaryRegion}/${SECONDARY_REGION}/g" | \
+    sed "s/\${PrimaryQueueName}/${PRIMARY_QUEUE_NAME}/g" | \
+    sed "s/\${SecondaryQueueName}/${SECONDARY_QUEUE_NAME}/g" | \
+    sed "s/\${PrimaryTopicName}/${PRIMARY_TOPIC_NAME}/g" | \
+    sed "s/\${SecondaryTopicName}/${SECONDARY_TOPIC_NAME}/g")
+DASHBOARD_BODY=$(echo "$DASHBOARD_BODY" | jq -c '.' | jq -R .) # Then compact and escape
+sam deploy --stack-name "$STACK_NAME-dashboard" --template-file dashboard.yaml --region $PRIMARY_REGION --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --resolve-s3 --parameter-overrides DashboardBody="$DASHBOARD_BODY"

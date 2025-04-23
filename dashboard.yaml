@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Cross-region SNS-SQS-Dashboard setup'
+
+Parameters:
+  DashboardBody:
+    Type: String
+    Description: The dashboard body JSON
+
+Resources:
+  SnsSqsMultiRegion:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardBody: !Sub '${DashboardBody}'
+
+Outputs:
+  DashboardUrl:
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${SnsSqsMultiRegion}"
+    Description: URL for the CloudWatch Dashboard

@@ -3,13 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: 'Cross-region SNS-SQS-Lambda setup'
 
 Parameters:
-  CreateDashboard:
-    Type: String
-    Default: 'false'
-    AllowedValues: 
-      - 'true'
-      - 'false'
-    Description: Set to true to create CloudWatch dashboard
   PrimaryRegion:
     Type: String
     Default: 'us-east-1'
@@ -20,11 +13,6 @@ Parameters:
     Default: 'us-west-2'
     Description: Secondary region for disaster recovery
     AllowedPattern: '^[a-z]{2}-[a-z]+-\d+$'
-
-Conditions:
-  ShouldCreateDashboard: !Equals 
-    - !Ref CreateDashboard
-    - 'true'
 
 Resources:
   ActiveQueue:
@@ -157,62 +145,7 @@ Resources:
             MaximumBatchingWindowInSeconds: 0
             FunctionResponseTypes:
               - ReportBatchItemFailures
-  SnsSqSMultiRegion:
-    Type: AWS::CloudWatch::Dashboard
-    Condition: ShouldCreateDashboard
-    DeletionPolicy: Delete
-    Properties:
-      DashboardBody: !Sub |
-        {
-            "widgets": [
-                {
-                    "height": 9,
-                    "width": 24,
-                    "y": 19,
-                    "x": 0,
-                    "type": "metric",
-                    "properties": {
-                        "metrics": [
-                            [ "SnsSqsMultiRegion", "Latency", "ServiceName", "SqsConsumer", { "region": "${PrimaryRegion}", "id": "m1", "visible": true } ],
-                            [ "...", { "region": "${SecondaryRegion}", "id": "m2", "visible": true } ]
-                        ],
-                        "view": "timeSeries",
-                        "stacked": true,
-                        "region": "${PrimaryRegion}",
-                        "stat": "Maximum",
-                        "period": 10,
-                        "yAxis": {
-                            "left": {
-                                "label": "",
-                                "showUnits": false
-                            }
-                        },
-                        "title": "Consumer Latency (milliseconds)"
-                    }
-                },
-                {
-                    "height": 8,
-                    "width": 24,
-                    "y": 9,
-                    "x": 0,
-                    "type": "metric",
-                    "properties": {
-                        "metrics": [
-                            [ "AWS/SQS", "NumberOfMessagesDeleted", "QueueName", "sns-sqs-multi-region-ActiveQueue-awrqmxQVPUea", { "region": "${PrimaryRegion}", "label": "primary queue" } ],
-                            [ "...", "sns-sqs-multi-region-DisasterRecoveryQueue-gSOrJpTgG01w", { "region": "${SecondaryRegion}", "label": "dr queue" } ]
-                        ],
-                        "view": "timeSeries",
-                        "stacked": true,
-                        "region": "${PrimaryRegion}",
-                        "setPeriodToTimeRange": true,
-                        "title": "Messages Processed Per Min",
-                        "stat": "Sum",
-                        "period": 60
-                    }
-                }
-            ]
-        }
-      
+
 Outputs:
   SnsTopicArn:
     Value: !Ref SnsTopic
@@ -223,7 +156,3 @@ Outputs:
   DisasterRecoveryQueueArn:
     Value: !GetAtt DisasterRecoveryQueue.Arn
     Description: DR QUEUE Arn
-  DashboardUrl:
-    Condition: ShouldCreateDashboard
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${SnsSqSMultiRegion}"
-    Description: URL for the CloudWatch Dashboard
